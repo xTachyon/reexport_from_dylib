@@ -6,3 +6,5 @@ add_subdirectory(common)
 add_subdirectory(the_staticlib)
 add_subdirectory(the_dylib)
 add_subdirectory(the_bin)
+
+install(TARGETS the_bin the_dylib DESTINATION bin)

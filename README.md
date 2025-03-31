@@ -25,4 +25,6 @@ The following directory/targets can be seen:
 On Windows, to export a symbol from a dll, we need to mark it as [dllexport](https://learn.microsoft.com/en-us/cpp/cpp/dllexport-dllimport):
 ```cpp
 __declspec(dllexport) void dylib_symbol_1();
+__declspec(dllexport) void staticlib_symbol_1();
 ```
+
