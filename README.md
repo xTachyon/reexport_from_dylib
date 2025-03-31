@@ -20,7 +20,7 @@ The following directory/targets can be seen:
 - `the_dylib`: the dylib that links the the_staticlib and wants to export both its own symbol `dylib_symbol_1`, and `staticlib_symbol_1`
 - `the_bin`: a binary that links `the_dylib`, and where we expect the errors to happen
 
-# Solution 1 - Windows specific
+# Investigating on Windows
 
 On Windows, to export a symbol from a dll, we need to mark it as [dllexport](https://learn.microsoft.com/en-us/cpp/cpp/dllexport-dllimport):
 ```cpp
@@ -28,3 +28,37 @@ __declspec(dllexport) void dylib_symbol_1();
 __declspec(dllexport) void staticlib_symbol_1();
 ```
 
+We can check the exports of a dll as following:
+```
+C:\repos\reexport_from_dylib\bin\Release>dumpbin /exports the_dylib.dll
+Microsoft (R) COFF/PE Dumper Version 14.43.34808.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file the_dylib.dll
+
+File Type: DLL
+
+  Section contains the following exports for the_dylib.dll
+
+    00000000 characteristics
+    FFFFFFFF time date stamp
+        0.00 version
+           1 ordinal base
+           2 number of functions
+           2 number of names
+
+    ordinal hint RVA      name
+
+          1    0 00001000 dylib_symbol_1
+```
+
+We can see the symbol from `the_dylib`, but not the once from `the_staticlib`. I really believed this would work from the start on Windows with `dllexport`, but I was wrong.
+
+Why does this happen?
+
+It seems like the linker has an algorithm as following:
+- search all objs (.obj, .o) for symbols marked as `dllexport`, and include them
+- include all the dependencies of the above symbols
+
+This is the reason why the symbols from `the_staticlib` don't appear in the first place. The linker discards unused 
