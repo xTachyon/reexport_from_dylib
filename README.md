@@ -75,3 +75,63 @@ However, what is a surprise, is that both `staticlib_symbol_1` and `staticlib_sy
 
 # Investigating on Linux
 
+To make the code cross platform, we can pull the `dllexport` into a macro named `EXPORT`, that currently does nothing on non-Windows.
+
+We compile the code, and.. it works?
+
+We can check the symbols:
+```
+✗ nm ../bin/libthe_dylib.so 
+0000000000004008 b completed.0
+                 w __cxa_finalize@GLIBC_2.2.5
+0000000000001040 t deregister_tm_clones
+00000000000010b0 t __do_global_dtors_aux
+0000000000003df0 d __do_global_dtors_aux_fini_array_entry
+0000000000004000 d __dso_handle
+0000000000001100 T dylib_symbol_1
+0000000000003df8 d _DYNAMIC
+0000000000001104 t _fini
+00000000000010f0 t frame_dummy
+0000000000003de8 d __frame_dummy_init_array_entry
+0000000000002094 r __FRAME_END__
+0000000000003fe8 d _GLOBAL_OFFSET_TABLE_
+                 w __gmon_start__
+0000000000002000 r __GNU_EH_FRAME_HDR
+0000000000001000 t _init
+                 w _ITM_deregisterTMCloneTable
+                 w _ITM_registerTMCloneTable
+0000000000001070 t register_tm_clones
+0000000000004008 d __TMC_END__
+```
+
+.. What? Okay, the first column is probably the address, and the last is the name of the function, but what about the middle one? We can check the manual for `nm` to find out this!
+```
+...
+           "T"
+           "t" The symbol is in the text (code) section.
+
+           "U" The symbol is undefined.
+
+```
+
+There are a lot of letters to check out, but the most relevant:
+- t/T: this symbol is defined in this .so
+- U: this symbol is from another binary that's supposed to be loaded at runtime
+
+But what's the different between lowercase t and uppercase T?
+```
+If lowercase, the symbol is usually local; if uppercase, the symbol is global (external).
+```
+So the difference is that t is supposed to be a local symbol that exists, but it's not exported, while T is exported.
+
+Now that we know this, we can see no symbol from `the_staticlib` are present, which is not a surprise at this point, but this is a surprise:
+```
+0000000000001100 T dylib_symbol_1
+```
+Not only `dylib_symbol_1` is defined, but it's also exported. Why is that?
+
+It turns out that Unixes take the complete opposite to Windows. On Unixes, everything is public (exported) by default, while on Windows, everything is not exported.
+
+# It works on Unixes!
+
+But we don't like it. 

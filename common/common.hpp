@@ -1,6 +1,14 @@
-extern "C" {
-__declspec(dllexport) void staticlib_symbol_1();
-__declspec(dllexport) void staticlib_symbol_2();
+#pragma once
 
-__declspec(dllexport) void dylib_symbol_1();
+#ifdef _MSC_VER
+#    define EXPORT __declspec(dllexport)
+#else
+#    define EXPORT
+#endif
+
+extern "C" {
+EXPORT void staticlib_symbol_1();
+EXPORT void staticlib_symbol_2();
+
+EXPORT void dylib_symbol_1();
 }
