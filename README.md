@@ -132,6 +132,31 @@ Not only `dylib_symbol_1` is defined, but it's also exported. Why is that?
 
 It turns out that Unixes take the complete opposite to Windows. On Unixes, everything is public (exported) by default, while on Windows, everything is not exported.
 
-# It works on Unixes!
+# It works on Unixes.. right?
 
-But we don't like it. 
+It does work. But it works for the wrong reasons. Everything exported by default has a lot of problems. To cite a few reasons from GNU's page on [Visibility](https://gcc.gnu.org/wiki/Visibility):
+- It lets the optimiser produce better code.
+- It reduces the size of your DSO by 5-20%.
+- Much lower chance of symbol collision.
+
+And one reason of my own:
+- It makes it very easy to depend on a symbol that was supposed to be an implementation detail, that will break your code in a future version.
+
+So, while it works like this, it's not representative for code that'd you'd write for a real project.
+
+It turns out GCC (and Clang) has 4 [visibility](https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-visibility-function-attribute) options that can be set globally or for each symbol, out of which 2 are usually useful:
+- default: this is indeed the *default* if something else is not specified, and it actually means the symbol is exported
+- hidden: the symbol is not exported
+
+So, instead of having everything exported by default, what we want is more like what Windows does:
+- pass `-fvisibility=hidden` and `-fvisibility-inlines-hidden` to the compiler so everything is not exported by default
+- only mark symbols we actually want to export with `visibility=default`
+
+Now we can modify out `EXPORT` macro to look like this:
+```cpp
+#ifdef _MSC_VER
+#    define EXPORT __declspec(dllexport)
+#else
+#    define EXPORT __attribute__((visibility ("default")))
+#endif
+```
