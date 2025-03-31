@@ -132,9 +132,11 @@ Not only `dylib_symbol_1` is defined, but it's also exported. Why is that?
 
 It turns out that Unixes take the complete opposite to Windows. On Unixes, everything is public (exported) by default, while on Windows, everything is not exported.
 
-# It works on Unixes.. right?
+# It works on Unixes!
 
-It does work. But it works for the wrong reasons. Everything exported by default has a lot of problems. To cite a few reasons from GNU's page on [Visibility](https://gcc.gnu.org/wiki/Visibility):
+That's great, right? RIGHT?
+
+It's not great. But it works for the wrong reasons. Everything exported by default has a lot of problems. To cite a few reasons from GNU's page on [Visibility](https://gcc.gnu.org/wiki/Visibility):
 - It lets the optimiser produce better code.
 - It reduces the size of your DSO by 5-20%.
 - Much lower chance of symbol collision.
@@ -160,3 +162,22 @@ Now we can modify out `EXPORT` macro to look like this:
 #    define EXPORT __attribute__((visibility ("default")))
 #endif
 ```
+
+Now our code behaves a lot more similarly between platforms: everything is not exported by default, we can individually mark what we want exported, and the symbols from `the_staticlib` only show up as exports is they're used by a direct export from `the_dylib`.
+
+We can go back to out original problem: how do we export reexport symbols?
+
+# Solution 1 - Whole archive
+
+If you're going to google the problem that I described, the solution that's all over the Google's first page is to use `whole-archive`. 
+Great, a solution. Even better, CMake has a cross-platform [solution](https://cmake.org/cmake/help/latest/manual/cmake-generator-expressions.7.html) for Linux, Apple, Windows, and some more platforms. 
+
+Let's read the man page to be sure it's great:
+```
+       --whole-archive
+           For each archive mentioned on the command line after the --whole-archive option, include **every** object file in the archive in the link, rather than searching the archive for the  required  object  files.   This  is
+           normally used to turn an archive file into a shared library, forcing every object to be included in the resulting shared library.
+```
+
+
+This is a correct solution, however, the devil is in the details. It includes every object 
