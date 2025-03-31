@@ -61,4 +61,17 @@ It seems like the linker has an algorithm as following:
 - search all objs (.obj, .o) for symbols marked as `dllexport`, and include them
 - include all the dependencies of the above symbols
 
-This is the reason why the symbols from `the_staticlib` don't appear in the first place. The linker discards unused 
+This is the reason why the symbols from `the_staticlib` don't appear in the first place, as they're not ever used. The linker discards unused symbols (or does it?).
+
+Calling `staticlib_symbol_1` from `dylib_symbol_1` marks the function used, and with no surprise, it does show as exported symbol.
+
+```cpp
+__declspec(dllexport) void dylib_symbol_1() {
+    staticlib_symbol_1();
+}
+```
+
+However, what is a surprise, is that both `staticlib_symbol_1` and `staticlib_symbol_2` show up as exports, even if we never used `staticlib_symbol_2`. My guess is that the linker works on object files, not on symbols directly, so even if just one symbol from that file is used, the whole file is pulled into the binary.
+
+# Investigating on Linux
+
